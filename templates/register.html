@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <i class="fas fa-shield-halved" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
+            <h1 style="color: var(--primary); font-size: 1.8rem; margin-bottom: 0.5rem;">DigiLocker</h1>
+            <p style="color: var(--text-muted);">Your Documents Anytime, Anywhere</p>
+        </div>
+        
+        <h2 style="margin-bottom: 1.5rem; font-size: 1.25rem; text-align: center;">Create Your Secure Wallet</h2>
+        
+        <form id="register-form">
+            <div class="form-group">
+                <label for="email"><i class="fas fa-envelope"></i> Email Address</label>
+                <input type="email" id="email" class="form-input" placeholder="name@example.com" required>
+            </div>
+            <div class="form-group">
+                <label for="password"><i class="fas fa-lock"></i> Set Security Password</label>
+                <input type="password" id="password" class="form-input" placeholder="Create a strong password" required>
+            </div>
+            <div class="form-group">
+                <label for="confirm_password"><i class="fas fa-shield-check"></i> Confirm Password</label>
+                <input type="password" id="confirm_password" class="form-input" placeholder="Re-enter password" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
+        </form>
+        
+        <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: var(--text-muted);">
+            Already registered? <a href="/login/" style="color: var(--primary); text-decoration: none; font-weight: 600;">Sign In</a>
+        </div>
+
+        <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Emblem_of_India.svg/150px-Emblem_of_India.svg.png" alt="Emblem" style="height: 40px; margin-bottom: 0.5rem; opacity: 0.7;">
+            <p style="font-size: 0.75rem; color: var(--text-muted);">A Digital India Initiative</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const confirm_password = document.getElementById('confirm_password').value;
+
+    if (password !== confirm_password) {
+        utils.showToast('Passwords do not match', 'error');
+        return;
+    }
+
+    try {
+        const response = await api.request('/auth/register/', {
+            method: 'POST',
+            body: JSON.stringify({ email, password })
+        });
+
+        if (response.ok) {
+            utils.showToast('Account registered successfully!');
+            setTimeout(() => { window.location.href = '/login/'; }, 1500);
+        } else {
+            const data = await response.json();
+            utils.showToast(data.detail || 'Registration failed', 'error');
+        }
+    } catch (error) {
+        utils.showToast('Something went wrong', 'error');
+    }
+});
+</script>
+{% endblock %}

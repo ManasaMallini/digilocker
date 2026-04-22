@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="auth-container" style="flex-direction: column; text-align: center;">
+    <div style="margin-bottom: 3rem;">
+        <i class="fas fa-vault" style="font-size: 5rem; color: var(--primary); margin-bottom: 1.5rem;"></i>
+        <h1 style="font-size: 3.5rem; margin-bottom: 1rem;">Secure Your Documents</h1>
+        <p style="font-size: 1.25rem; color: var(--text-muted); max-width: 600px; margin: 0 auto;">
+            The safest place for your Aadhar, PAN, and certificates. Access them anywhere, anytime.
+        </p>
+    </div>
+
+    <div style="display: flex; gap: 1rem; justify-content: center;">
+        <a href="/login/" class="btn btn-primary" style="width: auto; padding: 1rem 2.5rem;">Login to Dashboard</a>
+        <a href="/register/" class="btn" style="width: auto; padding: 1rem 2.5rem; border: 1px solid var(--border);">Create New Account</a>
+    </div>
+
+    <div style="margin-top: 5rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; max-width: 1000px;">
+        <div class="doc-card" style="text-align: left;">
+            <i class="fas fa-shield-alt" style="font-size: 2rem; color: var(--success); margin-bottom: 1rem;"></i>
+            <h3>High Security</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted);">Encrypted storage and multi-factor authentication for your peace of mind.</p>
+        </div>
+        <div class="doc-card" style="text-align: left;">
+            <i class="fas fa-share-nodes" style="font-size: 2rem; color: var(--primary); margin-bottom: 1rem;"></i>
+            <h3>Easy Sharing</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted);">Share documents via secure, time-limited links with a single click.</p>
+        </div>
+        <div class="doc-card" style="text-align: left;">
+            <i class="fas fa-mobile-screen" style="font-size: 2rem; color: var(--warning); margin-bottom: 1rem;"></i>
+            <h3>Access Everywhere</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted);">Responsive design ensures you can access your documents on any device.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

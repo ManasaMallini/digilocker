@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="auth-container" style="flex-direction: column; text-align: center;">
+    <div id="share-content" class="auth-card">
+        <div id="loading">
+            <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
+            <p>Verifying secure link...</p>
+        </div>
+
+        <!-- Password Entry -->
+        <div id="password-section" class="hidden">
+            <i class="fas fa-lock" style="font-size: 3rem; color: var(--warning); margin-bottom: 1rem;"></i>
+            <h2>Password Protected</h2>
+            <p style="margin-bottom: 1.5rem; color: var(--text-muted);">Enter the secret password to access this document.</p>
+            <div class="form-group">
+                <input type="password" id="share-password" class="form-input" placeholder="Enter password">
+            </div>
+            <button onclick="unlockLink()" class="btn btn-primary">Access Document</button>
+        </div>
+        
+        <div id="doc-info" class="hidden">
+            <i id="doc-icon" class="fas fa-file-pdf" style="font-size: 4rem; color: var(--primary); margin-bottom: 1.5rem;"></i>
+            <h2 id="share-title" style="margin-bottom: 0.5rem;">Document Title</h2>
+            <p id="integrity-hash" style="font-family: monospace; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 1.5rem; background: #f8fafc; padding: 0.5rem; border-radius: 4px;"></p>
+            <div style="display: flex; gap: 1rem;">
+                <a id="view-btn" target="_blank" class="btn btn-primary">View Online</a>
+                <a id="download-btn" download class="btn" style="border: 1px solid var(--border);">Download</a>
+            </div>
+        </div>
+
+        <div id="error-info" class="hidden">
+            <i class="fas fa-exclamation-triangle" style="font-size: 4rem; color: var(--danger); margin-bottom: 1.5rem;"></i>
+            <h2 id="error-msg">Link Unavailable</h2>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">This share link has either expired or been deactivated.</p>
+            <a href="/" class="btn btn-primary">Go Home</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const token = window.location.pathname.split('/').filter(Boolean).pop();
+
+    async function verifyLink() {
+        try {
+            const res = await fetch(`/api/documents/public/share/${token}/`);
+            const data = await res.json();
+            document.getElementById('loading').classList.add('hidden');
+            
+            if (res.ok) {
+                if (data.protected) {
+                    document.getElementById('password-section').classList.remove('hidden');
+                } else {
+                    showDocument(data);
+                }
+            } else {
+                document.getElementById('error-info').classList.remove('hidden');
+            }
+        } catch (error) {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error-info').classList.remove('hidden');
+        }
+    }
+
+    async function unlockLink() {
+        const password = document.getElementById('share-password').value;
+        try {
+            const res = await fetch(`/api/documents/public/share/${token}/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                document.getElementById('password-section').classList.add('hidden');
+                showDocument(data);
+            } else {
+                alert('Incorrect password');
+            }
+        } catch (e) { alert('Request failed'); }
+    }
+
+    function showDocument(data) {
+        document.getElementById('doc-info').classList.remove('hidden');
+        document.getElementById('share-title').textContent = data.title;
+        document.getElementById('integrity-hash').textContent = `SHA-256 Fingerprint: ${data.file_hash}`;
+        document.getElementById('view-btn').href = data.file_url;
+        document.getElementById('download-btn').href = data.file_url;
+        if (data.file_type.includes('image')) {
+            document.getElementById('doc-icon').className = 'fas fa-file-image';
+        }
+    }
+
+    window.onload = verifyLink;
+</script>
+{% endblock %}

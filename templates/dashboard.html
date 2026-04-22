@@ -1,0 +1,582 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+    .upload-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 2rem; text-align: center; background: var(--bg-light); transition: border-color 0.2s; margin-bottom: 2rem; cursor: pointer; }
+    .upload-zone.dragover { border-color: var(--primary); background: #eff6ff; }
+    .search-bar { position: relative; flex: 1; max-width: 500px; }
+    .search-bar i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+    .search-bar input { padding-left: 2.5rem; border-radius: 25px; }
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+    .hidden { display: none !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-shield-halved" style="font-size: 1.8rem;"></i>
+            <div>
+                <h2 style="font-size: 1.1rem; margin: 0;">DigiLocker</h2>
+                <p style="font-size: 0.65rem; margin: 0; opacity: 0.8;">Your Documents Anytime, Anywhere</p>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li class="nav-item">
+                    <button onclick="showSection('main-dashboard')" class="nav-link active" id="nav-home">
+                        <i class="fas fa-home"></i> Home
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button onclick="showSection('issued-docs')" class="nav-link" id="nav-issued">
+                        <i class="fas fa-certificate"></i> Issued Documents
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button onclick="showSection('uploaded-docs')" class="nav-link" id="nav-uploaded">
+                        <i class="fas fa-file-upload"></i> Uploaded Documents
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button onclick="showSection('drive')" class="nav-link" id="nav-drive">
+                        <i class="fas fa-hdd"></i> Drive
+                    </button>
+                </li>
+                <li class="nav-item" style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                    <a href="/profile/" class="nav-link">
+                        <i class="fas fa-user-circle"></i> Profile
+                    </a>
+                </li>
+                <li id="admin-link" class="nav-item hidden">
+                    <button onclick="showSection('admin-panel')" class="nav-link">
+                        <i class="fas fa-user-shield"></i> Admin Panel
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button id="dark-mode-toggle" class="nav-link">
+                        <i class="fas fa-moon"></i> Dark Mode
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button id="logout-btn" class="nav-link" style="color: var(--danger);">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </li>
+            </ul>
+        </nav>
+        <div style="padding: 1rem; font-size: 0.7rem; color: var(--text-muted); text-align: center; border-top: 1px solid var(--border);">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Emblem_of_India.svg/150px-Emblem_of_India.svg.png" alt="Emblem" style="height: 30px; margin-bottom: 0.5rem; opacity: 0.6;">
+            <p>Digital India | DigiLocker</p>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="main-dashboard-section">
+            <div class="welcome-banner">
+                <div class="welcome-text">
+                    <h1>Welcome, <span id="user-name-display">User</span>!</h1>
+                    <p id="user-email-display" style="color: var(--text-muted);"></p>
+                    <div style="margin-top: 1rem;">
+                        <span id="role-badge" class="btn-sm btn-primary" style="font-size: 0.7rem; padding: 0.2rem 0.6rem;">SECURE USER</span>
+                    </div>
+                </div>
+                <div class="welcome-image">
+                    <i class="fas fa-user-shield" style="font-size: 4rem; color: var(--primary); opacity: 0.2;"></i>
+                </div>
+            </div>
+
+            <section id="stats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2.5rem;">
+                <div class="doc-card">
+                    <div class="doc-meta">Total Documents</div>
+                    <div id="total-count" style="font-size: 1.8rem; font-weight: 700; color: var(--primary);">0</div>
+                    <div style="font-size: 0.75rem; color: var(--success); margin-top: 0.5rem;"><i class="fas fa-check-circle"></i> Sync Active</div>
+                </div>
+                <div class="doc-card">
+                    <div class="doc-meta">Drive Storage</div>
+                    <div id="total-size" style="font-size: 1.2rem; font-weight: 700;">0 KB / 10 MB</div>
+                    <div style="width: 100%; background: #e2e8f0; height: 6px; border-radius: 3px; margin-top: 0.8rem;">
+                        <div id="storage-bar" style="width: 0%; background: var(--primary); height: 100%; border-radius: 3px; transition: width 0.5s;"></div>
+                    </div>
+                </div>
+                <div class="doc-card">
+                    <div class="doc-meta">Security Level</div>
+                    <div style="font-size: 1.2rem; font-weight: 700; color: var(--success);">
+                        <i class="fas fa-lock"></i> High Security
+                    </div>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">ISO 27001 Certified</p>
+                </div>
+            </section>
+
+            <h3 style="margin-bottom: 1.25rem;">Browse Documents</h3>
+            <div class="category-grid" id="category-list">
+                <!-- Categories will be injected here -->
+            </div>
+
+            <div class="section-title">
+                <h3>Recent Documents</h3>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <div class="search-bar"><i class="fas fa-search"></i><input type="text" id="search-input" class="form-input" placeholder="Search..."></div>
+                    <button id="open-upload-modal" class="btn btn-primary"><i class="fas fa-plus"></i> Add New</button>
+                </div>
+            </div>
+
+            <div id="expiry-alerts" class="hidden" style="margin-bottom: 2rem; background: #fff1f2; border: 1px solid #fda4af; padding: 1rem; border-radius: 8px; color: #9f1239;">
+                <h4 style="margin-bottom: 0.5rem;"><i class="fas fa-exclamation-circle"></i> Expiry Alerts</h4>
+                <ul id="alert-list" style="padding-left: 1.5rem; font-size: 0.875rem;"></ul>
+            </div>
+
+            <div id="document-list" class="document-grid">
+                <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading documents...</div>
+            </div>
+
+            <section style="margin-top: 4rem;">
+                <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-history"></i> Recent Activity</h3>
+                <div class="doc-card" style="padding: 0;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                        <thead>
+                            <tr style="background: var(--bg-light); text-align: left;">
+                                <th style="padding: 1rem;">Activity</th>
+                                <th style="padding: 1rem;">Details</th>
+                                <th style="padding: 1rem;">Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-list">
+                            <tr><td colspan="3" style="padding: 2rem; text-align: center;">Fetching logs...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- Section for Issued Documents (Mocked/Filtered) -->
+        <div id="issued-docs-section" class="hidden">
+            <div class="section-title">
+                <h2>Issued Documents</h2>
+                <button class="btn btn-outline"><i class="fas fa-search"></i> Get More Issued Documents</button>
+            </div>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Digital copies of your official documents from government departments.</p>
+            <div id="issued-document-list" class="document-grid">
+                <!-- Filtered docs will go here -->
+            </div>
+        </div>
+
+        <div id="uploaded-docs-section" class="hidden">
+            <div class="section-title">
+                <h2>Uploaded Documents</h2>
+                <button id="open-upload-modal-2" class="btn btn-primary"><i class="fas fa-upload"></i> Upload More</button>
+            </div>
+            <div id="uploaded-document-list" class="document-grid"></div>
+        </div>
+
+        <div id="admin-panel-section" class="hidden">
+            <h2 style="margin-bottom: 2rem;"><i class="fas fa-user-shield"></i> Administrative Console</h2>
+            <div class="doc-card" style="padding: 0;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--bg-light); text-align: left;">
+                            <th style="padding: 1rem;">User Account</th>
+                            <th style="padding: 1rem;">Authorization</th>
+                            <th style="padding: 1rem;">Status</th>
+                            <th style="padding: 1rem;">Registered</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-user-list">
+                        <tr><td colspan="4" style="padding: 2rem; text-align: center;">Loading user database...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Modals -->
+<div id="upload-modal" class="modal hidden">
+    <div class="auth-card" style="max-width: 600px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2>Secure Upload</h2><button id="close-upload-modal" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">&times;</button>
+        </div>
+        <form id="upload-form">
+            <label id="drop-zone" for="file-input" class="upload-zone" style="display: block;">
+                <i class="fas fa-file-shield" style="font-size:3rem;color:var(--primary); pointer-events: none;"></i>
+                <p style="pointer-events: none; margin-top: 1rem;">Drag & Drop official documents or <strong>Browse</strong></p>
+                <input type="file" id="file-input" hidden multiple>
+            </label>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Document Category</label>
+                    <select id="doc-category" class="form-input"></select>
+                </div>
+                <div class="form-group">
+                    <label>Security Level</label>
+                    <select id="doc-security" class="form-input">
+                        <option value="normal">Standard Security</option>
+                        <option value="high">Digital Vault (High)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Valid Until (Expiry Date)</label>
+                <input type="date" id="doc-expiry" class="form-input">
+            </div>
+            
+            <button type="submit" id="submit-upload" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" disabled>
+                <i class="fas fa-cloud-upload-alt"></i> Start Secure Upload
+            </button>
+        </form>
+    </div>
+</div>
+
+<div id="share-modal" class="modal hidden">
+    <div class="auth-card">
+        <h2><i class="fas fa-share-nodes"></i> Secure Sharing</h2>
+        <p id="share-doc-title" style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem;"></p>
+        
+        <div id="share-setup">
+            <div class="form-group">
+                <label>Set Access Password (Recommended)</label>
+                <input type="password" id="share-link-password" class="form-input" placeholder="Enter password for link">
+            </div>
+            <button id="generate-share-btn" class="btn btn-primary" style="width: 100%;">Generate Encrypted Link</button>
+        </div>
+
+        <div id="share-result" class="hidden">
+            <div class="form-group">
+                <label>Encrypted Link</label>
+                <div style="display:flex;gap:0.5rem;"><input type="text" id="share-url-input" class="form-input" readonly style="font-size: 0.8rem;"><button id="copy-share-url" class="btn btn-icon" style="flex-shrink: 0;"><i class="fas fa-copy"></i></button></div>
+            </div>
+            <button onclick="document.getElementById('share-modal').classList.add('hidden')" class="btn btn-primary" style="width: 100%;">Close</button>
+        </div>
+    </div>
+</div>
+
+<div id="preview-modal" class="modal hidden">
+    <div class="auth-card" style="max-width: 90%; width: 900px; height: 90vh; display: flex; flex-direction: column; padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 id="preview-title">Document Preview</h2>
+            <button id="close-preview-modal" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">&times;</button>
+        </div>
+        <div id="preview-container" style="flex: 1; overflow: auto; background: #f1f5f9; border-radius: 8px; display: flex; justify-content: center; align-items: center; border: 1px solid var(--border);"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let documents = [];
+    let categories = [];
+    let currentUser = null;
+
+    const categoryIcons = {
+        'Aadhar': 'fas fa-id-card',
+        'PAN': 'fas fa-id-badge',
+        'Passport': 'fas fa-passport',
+        'Education': 'fas fa-graduation-cap',
+        'Medical': 'fas fa-heartbeat',
+        'Others': 'fas fa-file-alt'
+    };
+
+    async function loadDashboard() {
+        try {
+            const [docsRes, catsRes, profileRes] = await Promise.all([
+                api.request('/documents/'), 
+                api.request('/documents/categories/'),
+                api.request('/auth/profile/')
+            ]);
+            
+            if (docsRes.ok) documents = await docsRes.json();
+            if (catsRes.ok) categories = await catsRes.json();
+            
+            if (profileRes.ok) {
+                currentUser = await profileRes.json();
+                document.getElementById('user-email-display').textContent = currentUser.email;
+                document.getElementById('user-name-display').textContent = currentUser.email.split('@')[0];
+                
+                const adminLink = document.getElementById('admin-link');
+                const badge = document.getElementById('role-badge');
+                
+                if (currentUser.role === 'admin') {
+                    adminLink.classList.remove('hidden');
+                    badge.textContent = 'SYSTEM ADMINISTRATOR';
+                    badge.style.backgroundColor = '#9333ea';
+                }
+            }
+            
+            renderCategories();
+            renderDocuments(documents);
+            loadLogs();
+        } catch (error) { utils.showToast('System synchronization failed', 'error'); }
+    }
+
+    function renderCategories() {
+        const select = document.getElementById('doc-category');
+        select.innerHTML = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+        const grid = document.getElementById('category-list');
+        grid.innerHTML = categories.map(c => `
+            <div class="category-card" onclick="filterByCategory('${c.name}')">
+                <div class="category-icon"><i class="${categoryIcons[c.name] || 'fas fa-folder'}"></i></div>
+                <div class="category-name">${c.name}</div>
+            </div>
+        `).join('');
+    }
+
+    function filterByCategory(catName) {
+        const filtered = documents.filter(d => d.category_name === catName);
+        renderDocuments(filtered);
+        document.getElementById('document-list').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function renderDocsToHtml(docs, isIssuedSection = false) {
+        if (docs.length === 0) {
+            return `<div style="grid-column:1/-1;text-align:center;padding:4rem;"><i class="fas fa-folder-open" style="font-size:4rem;color:#e2e8f0;"></i><h3>No documents found</h3></div>`;
+        }
+        return docs.map(doc => {
+            const isIssued = ['Aadhar', 'PAN', 'Passport'].includes(doc.category_name);
+            return `
+                <div class="doc-card ${isIssued ? 'issued' : ''}">
+                    <div class="doc-badge ${isIssued ? 'issued' : ''}">
+                        ${isIssued ? 'ISSUED' : 'UPLOADED'}
+                    </div>
+                    <div class="doc-icon"><i class="${getFileIcon(doc.file_type)}" style="color: ${doc.security_level === 'high' ? '#9333ea' : 'var(--primary)'}"></i></div>
+                    <div class="doc-title" title="${doc.title}">${doc.title}</div>
+                    <div class="doc-meta">${doc.category_name} &bull; ${utils.formatBytes(doc.file_size)}</div>
+                    <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button onclick="previewDocument('${doc.file_url}', '${doc.file_type}', '${doc.title.replace(/'/g, "\\'")}')" class="btn-icon" title="View"><i class="fas fa-eye"></i></button>
+                            <button onclick="openShareModal(${doc.id}, '${doc.title.replace(/'/g, "\\'")}')" class="btn-icon" title="Share"><i class="fas fa-share-alt"></i></button>
+                        </div>
+                        <button onclick="deleteDocument(${doc.id})" class="btn-icon" style="color:var(--danger); border-color: transparent;" title="Remove"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    let activeSection = 'main-dashboard';
+
+    function renderDocuments(docs) {
+        const list = document.getElementById('document-list');
+        const alertList = document.getElementById('alert-list');
+        const alertsContainer = document.getElementById('expiry-alerts');
+        
+        // Alerts
+        let nearExpiryDocs = docs.filter(d => d.is_near_expiry);
+        if (nearExpiryDocs.length > 0) {
+            alertsContainer.classList.remove('hidden');
+            alertList.innerHTML = nearExpiryDocs.map(d => `<li><strong>${d.title}</strong> expires on ${d.expiry_date}</li>`).join('');
+        } else { alertsContainer.classList.add('hidden'); }
+
+        const issuedCategories = ['Aadhar', 'PAN', 'Passport', 'Education'];
+        const issuedDocs = docs.filter(d => issuedCategories.includes(d.category_name));
+        const allDocsHtml = renderDocsToHtml(docs);
+        const issuedDocsHtml = renderDocsToHtml(issuedDocs);
+
+        // Render to containers
+        list.innerHTML = renderDocsToHtml(docs.slice(0, 8)); // Home summary
+        document.getElementById('issued-document-list').innerHTML = issuedDocsHtml;
+        
+        // Both Uploaded and Drive will now show all documents
+        document.getElementById('uploaded-document-list').innerHTML = allDocsHtml;
+
+        updateStats(docs.length, docs.reduce((a, b) => a + b.file_size, 0));
+    }
+
+    function updateStats(count, size) {
+        document.getElementById('total-count').textContent = count;
+        document.getElementById('total-size').textContent = `${utils.formatBytes(size)} / 10 MB`;
+        const percent = Math.min((size / (10 * 1024 * 1024)) * 100, 100);
+        document.getElementById('storage-bar').style.width = percent + '%';
+    }
+
+    function getFileIcon(t) { 
+        if (t.includes('pdf')) return 'fas fa-file-pdf';
+        if (t.includes('image')) return 'fas fa-file-image';
+        return 'fas fa-file-invoice';
+    }
+
+    async function loadLogs() {
+        const res = await api.request('/auth/logs/');
+        if (res.ok) {
+            const logs = await res.json();
+            const list = document.getElementById('logs-list');
+            list.innerHTML = logs.slice(0, 5).map(l => `
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 1rem;"><span class="btn-sm btn-outline" style="font-size: 0.65rem; padding: 0.1rem 0.4rem;">${l.action}</span></td>
+                    <td style="padding: 1rem; color: var(--text-muted);">${l.details}</td>
+                    <td style="padding: 1rem; font-size: 0.75rem;">${utils.formatDate(l.timestamp)}</td>
+                </tr>
+            `).join('');
+            if (!logs.length) list.innerHTML = '<tr><td colspan="3" style="padding: 2rem; text-align: center;">No recent activity.</td></tr>';
+        }
+    }
+
+    async function loadAdminPanel() {
+        const res = await api.request('/auth/admin/users/');
+        if (res.ok) {
+            const users = await res.json();
+            const list = document.getElementById('admin-user-list');
+            list.innerHTML = users.map(u => `
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 1rem; font-weight: 500;">${u.email}</td>
+                    <td style="padding: 1rem;"><span class="btn-sm btn-primary" style="font-size: 0.65rem;">${u.role.toUpperCase()}</span></td>
+                    <td style="padding: 1rem; color: ${u.is_verified ? 'var(--success)' : 'var(--danger)'}"><i class="fas ${u.is_verified ? 'fa-check-circle' : 'fa-clock'}"></i> ${u.is_verified ? 'Verified' : 'Pending'}</td>
+                    <td style="padding: 1rem; font-size: 0.75rem;">${utils.formatDate(u.date_joined)}</td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    function showSection(sectionId) {
+        activeSection = sectionId;
+        // Update nav active state
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        const activeNav = {
+            'main-dashboard': 'nav-home',
+            'issued-docs': 'nav-issued',
+            'uploaded-docs': 'nav-uploaded',
+            'drive': 'nav-drive',
+            'admin-panel': null
+        }[sectionId];
+        if (activeNav) document.getElementById(activeNav).classList.add('active');
+
+        // Show section
+        ['main-dashboard', 'issued-docs', 'uploaded-docs', 'admin-panel'].forEach(s => {
+            const el = document.getElementById(s + '-section');
+            if (el) el.classList.add('hidden');
+        });
+        
+        const target = document.getElementById(sectionId + '-section');
+        const uploadedHeading = document.getElementById('uploaded-docs-section')?.querySelector('h2');
+        
+        if (target) target.classList.remove('hidden');
+        else if (sectionId === 'drive') {
+            document.getElementById('uploaded-docs-section').classList.remove('hidden');
+            if (uploadedHeading) uploadedHeading.innerHTML = '<i class="fas fa-hdd"></i> DigiLocker Drive';
+        }
+        
+        if (sectionId === 'uploaded-docs' && uploadedHeading) {
+            uploadedHeading.innerHTML = '<i class="fas fa-file-upload"></i> Uploaded Documents';
+        }
+
+        renderDocuments(documents); // Refresh the view
+        if (sectionId === 'admin-panel') loadAdminPanel();
+    }
+
+    window.deleteDocument = async (id) => {
+        if (!confirm('Are you sure you want to remove this document from DigiLocker?')) return;
+        const res = await api.request(`/documents/${id}/`, { method: 'DELETE' });
+        if (res.ok) { utils.showToast('Document removed successfully'); loadDashboard(); }
+    };
+
+    window.openShareModal = (id, title) => {
+        document.getElementById('share-doc-title').textContent = title;
+        document.getElementById('share-setup').classList.remove('hidden');
+        document.getElementById('share-result').classList.add('hidden');
+        document.getElementById('share-link-password').value = '';
+        document.getElementById('share-modal').classList.remove('hidden');
+
+        document.getElementById('generate-share-btn').onclick = async () => {
+            const password = document.getElementById('share-link-password').value;
+            const res = await api.request(`/documents/${id}/share/`, { 
+                method: 'POST', 
+                body: JSON.stringify({ expires_in: 7, password }) 
+            });
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('share-url-input').value = `${window.location.origin}/share/${data.token}/`;
+                document.getElementById('share-setup').classList.add('hidden');
+                document.getElementById('share-result').classList.remove('hidden');
+            }
+        };
+    };
+
+    window.previewDocument = (url, type, title) => {
+        const container = document.getElementById('preview-container');
+        document.getElementById('preview-title').textContent = title;
+        container.innerHTML = '';
+        if (type.includes('image')) {
+            container.innerHTML = `<img src="${url}" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
+        } else if (type.includes('pdf')) {
+            container.innerHTML = `<iframe src="${url}" style="width: 100%; height: 100%; border: none;"></iframe>`;
+        } else {
+            container.innerHTML = `<div style="text-align:center;"><i class="fas fa-file-invoice" style="font-size:4rem; color: var(--primary);"></i><p style="margin-top: 1rem;">No digital preview available for this format.</p><a href="${url}" download class="btn btn-primary btn-sm">Download to View</a></div>`;
+        }
+        document.getElementById('preview-modal').classList.remove('hidden');
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem('dark-mode') === 'enabled') document.body.classList.add('dark');
+        loadDashboard();
+        
+        // Modal Controls
+        const uploadModal = document.getElementById('upload-modal');
+        const openBtns = [document.getElementById('open-upload-modal'), document.getElementById('open-upload-modal-2')];
+        openBtns.forEach(btn => {
+            if (btn) btn.onclick = () => uploadModal.classList.remove('hidden');
+        });
+        
+        document.getElementById('close-upload-modal').onclick = () => uploadModal.classList.add('hidden');
+        document.getElementById('close-preview-modal').onclick = () => document.getElementById('preview-modal').classList.add('hidden');
+
+        document.getElementById('dark-mode-toggle').onclick = () => {
+            document.body.classList.toggle('dark');
+            localStorage.setItem('dark-mode', document.body.classList.contains('dark') ? 'enabled' : 'disabled');
+        };
+
+        // Upload Logic
+        const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const submitBtn = document.getElementById('submit-upload');
+
+        dropZone.onclick = (e) => { e.stopPropagation(); fileInput.click(); };
+        fileInput.onchange = () => {
+            if (fileInput.files.length) {
+                submitBtn.disabled = false;
+                dropZone.querySelector('p').innerHTML = `<strong>${fileInput.files.length}</strong> file(s) ready for secure upload`;
+                dropZone.style.borderColor = 'var(--success)';
+            }
+        };
+
+        document.getElementById('upload-form').onsubmit = async (e) => {
+            e.preventDefault();
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Encrypting & Uploading...';
+            
+            const category = document.getElementById('doc-category').value;
+            const security = document.getElementById('doc-security').value;
+            const expiry = document.getElementById('doc-expiry').value;
+
+            for (const file of fileInput.files) {
+                const fd = new FormData();
+                fd.append('file', file); fd.append('title', file.name); 
+                fd.append('category', category);
+                fd.append('security_level', security);
+                if (expiry) fd.append('expiry_date', expiry);
+
+                try {
+                    await api.request('/documents/', { method: 'POST', body: fd });
+                } catch (err) { utils.showToast(`Upload failed for ${file.name}`, 'error'); }
+            }
+            utils.showToast('All documents synced to DigiLocker');
+            uploadModal.classList.add('hidden');
+            submitBtn.textContent = 'Start Secure Upload';
+            loadDashboard();
+        };
+
+        document.getElementById('logout-btn').onclick = () => { api.clearTokens(); window.location.href = '/login/'; };
+        document.getElementById('copy-share-url').onclick = () => {
+            const input = document.getElementById('share-url-input');
+            input.select(); document.execCommand('copy');
+            utils.showToast('Secure link copied to clipboard');
+        };
+        document.getElementById('search-input').oninput = (e) => {
+            const q = e.target.value.toLowerCase();
+            renderDocuments(documents.filter(d => d.title.toLowerCase().includes(q) || d.category_name.toLowerCase().includes(q)));
+        };
+    });
+</script>
+{% endblock %}

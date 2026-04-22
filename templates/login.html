@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <i class="fas fa-shield-halved" style="font-size: 3.5rem; color: var(--primary); margin-bottom: 1rem;"></i>
+            <h1 style="color: var(--primary); font-size: 2rem; margin-bottom: 0.25rem; font-weight: 700;">DigiLocker</h1>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Your Documents Anytime, Anywhere</p>
+        </div>
+        
+        <h2 style="margin-bottom: 1.5rem; font-size: 1.25rem; text-align: center; color: var(--text-dark);">Sign In to Your Account</h2>
+        
+        <form id="login-form">
+            <div class="form-group">
+                <label for="email"><i class="fas fa-envelope" style="margin-right: 0.5rem; color: var(--primary);"></i> Email Address</label>
+                <input type="email" id="email" class="form-input" placeholder="admin@gmail.com" required>
+            </div>
+            <div class="form-group">
+                <label for="password"><i class="fas fa-lock" style="margin-right: 0.5rem; color: var(--primary);"></i> Password</label>
+                <input type="password" id="password" class="form-input" placeholder="•••••" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.85rem;">
+                <i class="fas fa-sign-in-alt"></i> Sign In
+            </button>
+        </form>
+        
+        <div style="margin-top: 2rem; text-align: center; font-size: 0.9rem; color: var(--text-muted);">
+            New to DigiLocker? <a href="/register/" style="color: var(--primary); text-decoration: none; font-weight: 600;">Create Account</a>
+        </div>
+        
+        <div style="margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Emblem_of_India.svg/150px-Emblem_of_India.svg.png" alt="Emblem" style="height: 45px; margin-bottom: 0.5rem; opacity: 0.8;">
+            <p style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">A Digital India Initiative</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    try {
+        const response = await api.request('/auth/login/', {
+            method: 'POST',
+            body: JSON.stringify({ email, password })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            api.setTokens(data.access, data.refresh);
+            utils.showToast('Authentication successful!');
+            setTimeout(() => { window.location.href = '/dashboard/'; }, 800);
+        } else {
+            utils.showToast('Invalid credentials provided', 'error');
+        }
+    } catch (error) {
+        utils.showToast('Unable to connect to security server', 'error');
+    }
+});
+</script>
+{% endblock %}
